@@ -2,6 +2,7 @@
 
 import pygame
 from settings import *
+from utils import collide_hit_rect
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -12,6 +13,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.hit_rect = self.rect
         self.vel = pygame.math.Vector2(0, 0)
         self.acc = pygame.math.Vector2(0, 0)
         self.on_ground = False
@@ -49,9 +51,9 @@ class Player(pygame.sprite.Sprite):
         self.acc.x += self.vel.x * PLAYER_FRICTION
         # equations of motion
         self.vel += self.acc
-        self.rect.x += self.vel.x + 0.5 * self.acc.x
-
-        self.rect.y += self.vel.y
+        self.hit_rect.x += self.vel.x + 0.5 * self.acc.x
+        self.hit_rect.y += self.vel.y
+        self.rect.center = self.hit_rect.center
 
     def animate(self):
         now = pygame.time.get_ticks()

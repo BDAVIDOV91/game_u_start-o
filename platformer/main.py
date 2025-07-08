@@ -7,6 +7,7 @@ from core.player import Player
 from core.platform import Platform
 from core.camera import Camera
 from core.enemy import Enemy
+from utils import collide_hit_rect
 from ui import UI
 from core.level import Level
 from save_manager import SaveManager
@@ -28,7 +29,7 @@ class Game:
         self.level.add_sprites(self.all_sprites)
         for p in self.level.platforms:
             self.platforms.add(p)
-        e1 = Enemy(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 80, TILE_SIZE, TILE_SIZE)
+        e1 = Enemy(self, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 80, TILE_SIZE, TILE_SIZE)
         self.all_sprites.add(e1)
         self.enemies.add(e1)
         self.camera = Camera(len(self.level.platforms) * TILE_SIZE, SCREEN_HEIGHT)
@@ -80,13 +81,13 @@ class Game:
         self.all_sprites.update()
         self.camera.update(self.player)
         # Check for collisions between player and platforms
-        hits = pygame.sprite.spritecollide(self.player, self.platforms, False)
+        hits = pygame.sprite.spritecollide(self.player, self.platforms, False, collide_hit_rect)
         if self.player.vel.y > 0 and hits:
             self.player.rect.bottom = hits[0].rect.top
             self.player.vel.y = 0
 
         # Check for collisions between player and enemies
-        enemy_hits = pygame.sprite.spritecollide(self.player, self.enemies, False)
+        enemy_hits = pygame.sprite.spritecollide(self.player, self.enemies, False, collide_hit_rect)
         if enemy_hits:
             self.game_state = "game_over"
         self.score += 1

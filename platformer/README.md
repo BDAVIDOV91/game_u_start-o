@@ -5,8 +5,9 @@ A 2D side-scrolling platformer game built with Pygame.
 ## Features
 
 - Player movement: left, right, jump
+- Player animations (idle, walk)
 - Platforms and collision
-- Patrolling enemies
+- Patrolling enemies with platform collision detection
 - Scrolling camera
 - Scoring system
 - Level loading from text files
