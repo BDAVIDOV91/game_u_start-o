@@ -7,17 +7,18 @@ This is a 2D side-scrolling platformer game, inspired by classics like Super Mar
 ## Features
 
 ### Core Gameplay
--   **Player Movement:** Responsive controls for left, right, and jump actions.
+-   **Player Movement:** Responsive controls for left, right, and jump actions, including a double jump mechanic.
 -   **Platforms:** Static platforms for player navigation.
--   **Enemies:** Basic enemies with patrolling AI that turn upon hitting platforms.
--   **Collision Detection:** Accurate collision handling for player-platform and player-enemy interactions using `hit_rect`.
--   **Scoring System:** A simple score counter displayed on the UI.
--   **Game States:** Implemented main menu, playing, and game over states.
+-   **Enemies:** Basic patrolling enemies that turn at platform edges. Player takes damage and becomes temporarily invincible with blinking effect upon collision.
+-   **Collision Detection:** Accurate collision handling for player-platform and player-enemy interactions.
+-   **Lives System:** Player has a limited number of lives, displayed on the UI.
+-   **Respawn System:** Player respawns at the last safe position after losing a life (from falling into a hole or enemy hit).
+-   **Game States:** Implemented game running and game over states. Game over screen provides options to restart or quit.
 -   **Level Loading:** Levels are loaded from simple text files, allowing for easy level design.
--   **Save/Load System:** Ability to save and load player position and score.
+-   **Invisible Wall:** Prevents player from moving left past the starting point.
 
 ### Visuals & Audio
--   **Sprite Animations:** Basic player animations for idle and walking states.
+-   **Sprite Animations:** Basic player animations for idle, run, jump, and fall states.
 -   **Camera System:** A camera that follows the player, enabling side-scrolling.
 
 ## Setup and Installation
@@ -66,11 +67,9 @@ To get the game running on your local machine, follow these steps:
 
 -   **Left Arrow Key:** Move player left
 -   **Right Arrow Key:** Move player right
--   **Up Arrow Key:** Jump
--   **S Key:** Save current game progress
--   **L Key:** Load saved game progress
--   **Spacebar (from Main Menu):** Start the game
+-   **Spacebar:** Jump
 -   **R Key (from Game Over screen):** Restart the game
+-   **Q Key (from Game Over screen):** Quit the game
 
 ## Project Structure
 
@@ -89,12 +88,12 @@ platformer/
 │   ├── platform.py      # Platforms and collision logic
 │   ├── level.py         # Level loading and generation
 │   ├── camera.py        # Camera and scrolling logic
+│   └── utils.py         # Utility functions (e.g., custom collision checks)
 │
 ├── main.py              # Main game loop, state management, and initialization
 ├── settings.py          # Game constants and configurations (screen size, FPS, colors, etc.)
 ├── ui.py                # User interface elements (score display, menus)
-├── save_manager.py      # Handles saving and loading game progress
-├── utils.py             # Utility functions (e.g., custom collision checks)
+├── save_manager.py      # Handles saving and loading game progress (Planned)
 ├── requirements.txt     # Python dependencies
 └── README.md            # Project documentation
 ```
