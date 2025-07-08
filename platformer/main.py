@@ -24,7 +24,7 @@ class Game:
         self.enemies = pygame.sprite.Group()
         self.player = Player(self, 100, 100)
         self.all_sprites.add(self.player)
-        self.level = Level("assets/levels/level1.txt")
+        self.level = Level("/home/technojihad/game_u_start-o/platformer/assets/levels/level1.txt")
         self.level.add_sprites(self.all_sprites)
         for p in self.level.platforms:
             self.platforms.add(p)
