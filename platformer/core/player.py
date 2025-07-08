@@ -1,80 +1,151 @@
-# core/player.py
-
 import pygame
-from settings import *
-from utils import collide_hit_rect
+import os
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, game, x, y):
+    def __init__(self, pos):
         super().__init__()
-        self.game = game
-        self.load_images()
-        self.image = self.idle_frames[0]
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.hit_rect = self.rect
-        self.vel = pygame.math.Vector2(0, 0)
-        self.acc = pygame.math.Vector2(0, 0)
-        self.on_ground = False
-        self.walking = False
-        self.current_frame = 0
-        self.last_update = 0
+        self.import_player_assets()
+        self.frame_index = 0
+        self.animation_speed = 0.15
+        self.image = self.animations['idle'][self.frame_index]
+        self.rect = self.image.get_rect(topleft=pos)
 
-    def load_images(self):
-        self.idle_frames = [pygame.image.load("platformer/assets/images/player/idle.png").convert()]
-        for frame in self.idle_frames:
-            frame.set_colorkey(BLACK)
-        self.walk_frames_r = [
-            pygame.image.load("/home/technojihad/game_u_start-o/platformer/assets/images/player/walk1.png").convert(),
-            pygame.image.load("/home/technojihad/game_u_start-o/platformer/assets/images/player/walk2.png").convert()
-        ]
-        self.walk_frames_l = []
-        for frame in self.walk_frames_r:
-            frame.set_colorkey(BLACK)
-            self.walk_frames_l.append(pygame.transform.flip(frame, True, False))
+        # player movement
+        self.direction = pygame.math.Vector2(0, 0)
+        self.speed = 5
+        self.gravity = 0.8
+        self.jump_speed = -16
+        self.on_ground = True # Set to True initially
+        self.can_double_jump = True # New attribute for double jump
+        self.lives = 3
+        self.last_safe_pos = list(pos) # Store last safe position
 
-    def update(self):
-        self.animate()
-        self.acc = pygame.math.Vector2(0, PLAYER_GRAVITY)
-        self.walking = False
+        # player status
+        self.status = 'idle'
+        self.facing_right = True
 
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            self.acc.x = -PLAYER_ACC
-            self.walking = True
-        if keys[pygame.K_RIGHT]:
-            self.acc.x = PLAYER_ACC
-            self.walking = True
+        # invincibility
+        self.invincible = False
+        self.invincibility_duration = 2000 # 2 seconds in milliseconds
+        self.invincibility_timer = 0
+        self.blink_timer = 0
 
-        # apply friction
-        self.acc.x += self.vel.x * PLAYER_FRICTION
-        # equations of motion
-        self.vel += self.acc
-        self.hit_rect.x += self.vel.x + 0.5 * self.acc.x
-        self.hit_rect.y += self.vel.y
-        self.rect.center = self.hit_rect.center
+    def import_player_assets(self):
+        character_path = os.path.join('platformer', 'assets', 'images', 'player')
+        self.animations = {'idle':[], 'run':[], 'jump':[], 'fall':[]}
+
+        # Load images directly from the player directory
+        self.animations['idle'].append(pygame.image.load(os.path.join(character_path, 'idle.png')).convert_alpha())
+        self.animations['run'].append(pygame.image.load(os.path.join(character_path, 'walk1.png')).convert_alpha())
+        self.animations['run'].append(pygame.image.load(os.path.join(character_path, 'walk2.png')).convert_alpha())
+        # Placeholder for jump and fall animations for now
+        self.animations['jump'].append(pygame.image.load(os.path.join(character_path, 'idle.png')).convert_alpha()) # Using idle for now
+        self.animations['fall'].append(pygame.image.load(os.path.join(character_path, 'idle.png')).convert_alpha()) # Using idle for now
 
     def animate(self):
-        now = pygame.time.get_ticks()
-        if self.walking:
-            if now - self.last_update > 200:
-                self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.walk_frames_l)
-                if self.vel.x > 0:
-                    self.image = self.walk_frames_r[self.current_frame]
-                else:
-                    self.image = self.walk_frames_l[self.current_frame]
+        animation = self.animations[self.status]
+
+        # loop over frame index
+        self.frame_index += self.animation_speed
+        if self.frame_index >= len(animation):
+            self.frame_index = 0
+
+        image = animation[int(self.frame_index)]
+        if self.facing_right:
+            self.image = image
         else:
-            self.image = self.idle_frames[0]
+            flipped_image = pygame.transform.flip(image, True, False)
+            self.image = flipped_image
+
+        if self.invincible:
+            alpha = 255 - (self.blink_timer * 50) % 256 # Blinking effect
+            self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255) # Fully opaque when not invincible
+
+    def get_input(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RIGHT]:
+            self.direction.x = 1
+            self.facing_right = True
+        elif keys[pygame.K_LEFT]:
+            self.direction.x = -1
+            self.facing_right = False
+        else:
+            self.direction.x = 0
+
+        if keys[pygame.K_SPACE]:
+            if self.on_ground:
+                self.jump()
+                self.can_double_jump = True
+            elif self.can_double_jump:
+                self.jump()
+                self.can_double_jump = False
+
+    def get_status(self):
+        if self.direction.y < 0: # jumping
+            self.status = 'jump'
+        elif self.direction.y > 1: # falling (a small threshold to avoid flickering)
+            self.status = 'fall'
+        else:
+            if self.direction.x != 0:
+                self.status = 'run'
+            else:
+                self.status = 'idle'
+
+    def apply_gravity(self):
+        self.direction.y += self.gravity
+        self.rect.y += self.direction.y
 
     def jump(self):
-        # jump only if standing on a platform
-        self.rect.y += 1
-        hits = pygame.sprite.spritecollide(self, self.game.platforms, False)
-        self.rect.y -= 1
-        if hits:
-            self.vel.y = -PLAYER_JUMP
+        self.direction.y = self.jump_speed
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+    def horizontal_movement_collision(self, platforms):
+        self.rect.x += self.direction.x * self.speed
+        for sprite in platforms.sprites():
+            if sprite.rect.colliderect(self.rect):
+                if self.direction.x < 0: # moving left
+                    self.rect.left = sprite.rect.right
+                elif self.direction.x > 0: # moving right
+                    self.rect.right = sprite.rect.left
+
+    def vertical_movement_collision(self, platforms):
+        self.apply_gravity()
+        for sprite in platforms.sprites():
+            if sprite.rect.colliderect(self.rect):
+                if self.direction.y > 0: # falling
+                    self.rect.bottom = sprite.rect.top
+                    self.direction.y = 0
+                    self.on_ground = True
+                    self.last_safe_pos = list(self.rect.topleft) # Update last safe position
+                elif self.direction.y < 0: # jumping
+                    self.rect.top = sprite.rect.bottom
+                    self.direction.y = 0
+
+        if self.direction.y != 0: # if not falling or jumping, not on ground
+            self.on_ground = False
+
+    def activate_invincibility(self):
+        self.invincible = True
+        self.invincibility_timer = pygame.time.get_ticks() # Get current time
+
+    def update(self, platforms, level_start_x):
+        self.get_input()
+        self.get_status()
+
+        # Handle invincibility
+        if self.invincible:
+            self.blink_timer += 1
+            if pygame.time.get_ticks() - self.invincibility_timer >= self.invincibility_duration:
+                self.invincible = False
+                self.blink_timer = 0
+
+        self.animate()
+        self.horizontal_movement_collision(platforms)
+
+        # Invisible wall at the start
+        if self.rect.left < level_start_x and self.direction.x < 0:
+            self.rect.left = level_start_x
+            self.direction.x = 0
+
+        self.vertical_movement_collision(platforms)

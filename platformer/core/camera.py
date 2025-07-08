@@ -1,24 +1,24 @@
-# core/camera.py
-
 import pygame
-from settings import *
 
 class Camera:
-    def __init__(self, width, height):
+    def __init__(self, width, height, level_width, level_height):
         self.camera = pygame.Rect(0, 0, width, height)
         self.width = width
         self.height = height
+        self.level_width = level_width
+        self.level_height = level_height
 
-    def apply(self, entity):
-        return entity.rect.move(self.camera.topleft)
+    def apply(self, target):
+        return target.rect.move(self.camera.topleft)
 
     def update(self, target):
-        x = -target.rect.x + int(SCREEN_WIDTH / 2)
-        y = -target.rect.y + int(SCREEN_HEIGHT / 2)
+        x = -target.rect.centerx + int(self.width / 2)
+        y = -target.rect.centery + int(self.height / 2)
 
         # limit scrolling to map size
         x = min(0, x)  # left
         y = min(0, y)  # top
-        x = max(-(self.width - SCREEN_WIDTH), x)  # right
-        y = max(-(self.height - SCREEN_HEIGHT), y)  # bottom
-        self.camera = pygame.Rect(x, y, self.width, self.height)
+        x = max(-(self.level_width - self.width), x)  # right
+        y = max(-(self.level_height - self.height), y)  # bottom
+
+        self.camera = pygame.Rect(x, y, self.level_width, self.level_height)
